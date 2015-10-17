@@ -1,39 +1,44 @@
 
 #include "Servo.h"
 
+#define MIN_THR_ANGLE    80
+#define MAX_THR_ANGLE    100
+#define MIN_ANGLE        70
+#define MID_ANGLE        90
+#define MAX_ANGLE        110
+
 int servo_in = 2;
-int pos, a_pos = 0;
+float pos;
+int a_pos = 0;
 unsigned long t_start, t_stop, t_pulse = 0;
-volatile int state = LOW;
+//volatile int state = LOW;
 Servo myservo;
 
 void setup() {
-     pinMode(servo_in, INPUT);
-     attachInterrupt(digitalPinToInterrupt(servo_in), isr_start, RISING);
-     attachInterrupt(digitalPinToInterrupt(servo_in), isr_stop, FALLING);
-     myservo.attach(9);
- }
- 
+  pinMode(servo_in, INPUT);
+  myservo.attach(9);
+}
+
 void loop() {
-     a_pos = pos;
-     pos = t_pulse/1000 * 180;
+  //a_pos = pos;
+  t_pulse = pulseIn(servo_in, HIGH, 2400);
+  if (t_pulse > 0)
+  {
+    if (t_pulse < 700)
+      t_pulse = 700;
+    Serial.println(t_pulse);
+    pos = ((t_pulse - 700) / 1500.0) * 180.0;
+    a_pos = abs(pos);
+    Serial.println(pos);
 
-     if(pos < 80)
-        pos = 76;
-     else if(pos > 100)
-        pos = 105;
-     else
-        pos = 90;
-
-     if( pos != a_pos)
-        myservo.write(pos);
- }
+    if(a_pos < MIN_THR_ANGLE)
+       a_pos = MIN_ANGLE;
+    else if(a_pos > MAX_THR_ANGLE)
+       a_pos = MAX_ANGLE;
+    else
+       a_pos = MID_ANGLE;
  
-void isr_start() {
-     t_start = micros();
- }
-
- void isr_stop() {
-     t_stop = micros();
-     t_pulse = t_stop - t_start;
- }
+    if ( pos != a_pos)
+      myservo.write(a_pos);
+  }
+}
